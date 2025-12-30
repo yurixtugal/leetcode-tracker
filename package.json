@@ -1,5 +1,5 @@
 {
-  "name": "tracker-gym",
+  "name": "leetcode-tracker",
   "private": true,
   "scripts": {
     "build": "turbo run build",
