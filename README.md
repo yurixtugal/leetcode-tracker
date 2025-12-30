@@ -34,7 +34,7 @@ leetcode-tracker/
 
 ```bash
 # Clone repository
-git clone <repo-url>
+git clone git@github.com:yurixtugal/leetcode-tracker.git
 cd leetcode-tracker
 
 # Install all dependencies
