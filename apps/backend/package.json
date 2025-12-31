@@ -1,0 +1,19 @@
+{
+  "name": "@leetcode-tracker/backend",
+  "version": "0.1.0",
+  "description": "Lambda handlers for LeetCode Tracker",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.159",
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3"
+  }
+}

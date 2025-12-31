@@ -1,0 +1,22 @@
+# Compiled output
+dist/
+*.js
+*.js.map
+*.d.ts
+
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+
+# Personal notes
+typescript.md
+
+# IDE
+.vscode/
+.idea/
