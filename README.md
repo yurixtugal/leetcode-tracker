@@ -7,7 +7,7 @@ Serverless system to track your LeetCode progress while practicing for technical
 - **Frontend:** React + Vite + TypeScript
 - **Backend:** AWS Lambda (Node.js/TypeScript)
 - **Infrastructure:** AWS CDK
-- **Database:** DynamoDB
+- **Database:** Turso (Edge SQLite) + Drizzle ORM
 - **Auth:** AWS Cognito
 - **Monorepo:** Turborepo + pnpm
 
@@ -108,9 +108,12 @@ Infrastructure as Code with AWS CDK.
 
 **Stacks:**
 - `AuthStack` - Cognito User Pool
-- `DatabaseStack` - DynamoDB + GSIs
 - `BackendStack` - Lambda + API Gateway
 - `FrontendStack` - S3 + CloudFront
+
+**Database:**
+- Turso edge database (managed separately)
+- Drizzle ORM for type-safe queries
 
 ### `packages/shared-types`
 Shared TypeScript types between frontend and backend.
@@ -141,12 +144,12 @@ pnpm deploy
        │
        ▼
 ┌─────────────┐
-│  5 Lambdas  │ (TypeScript handlers)
+│  5 Lambdas  │ (TypeScript + Drizzle ORM)
 └──────┬──────┘
        │
        ▼
 ┌─────────────┐
-│  DynamoDB   │ (NoSQL + GSIs)
+│    Turso    │ (Edge SQLite Database)
 └─────────────┘
 ```
 
@@ -157,7 +160,8 @@ pnpm deploy
 - ✅ Dashboard with statistics
 - ✅ Filters by difficulty and category
 - ✅ Progress visualizations
-- ✅ 100% serverless architecture
+- ✅ Modern edge-first architecture with Turso
+- ✅ Type-safe database queries with Drizzle ORM
 
 ## License
 
