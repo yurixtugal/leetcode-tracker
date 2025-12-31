@@ -9,3 +9,7 @@ cdk.out
 
 # Personal notes
 cdk.md
+
+# AWS CLI installer (if accidentally downloaded)
+aws/
+awscliv2.zip
