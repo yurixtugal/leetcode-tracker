@@ -7,6 +7,8 @@ import { Construct } from "constructs";
 import { AppStackProps } from "./stack-props";
 
 export class FrontendStack extends cdk.Stack {
+  public readonly distribution: cloudfront.Distribution;
+
   constructor(scope: Construct, id: string, props: AppStackProps) {
     super(scope, id, props);
     // S3 Bucket for website hosting
@@ -21,7 +23,7 @@ export class FrontendStack extends cdk.Stack {
     });
 
     // CloudFront Distribution
-    const distribution = new cloudfront.Distribution(
+    this.distribution = new cloudfront.Distribution(
       this,
       "WebsiteDistribution",
       {
@@ -56,13 +58,13 @@ export class FrontendStack extends cdk.Stack {
     new s3deploy.BucketDeployment(this, "DeployWebsite", {
       sources: [s3deploy.Source.asset("../apps/web/dist")],
       destinationBucket: websiteBucket,
-      distribution,
+      distribution: this.distribution,
       distributionPaths: ["/*"],
     });
 
     // Outputs
     new cdk.CfnOutput(this, "CloudFrontURL", {
-      value: distribution.distributionDomainName,
+      value: this.distribution.distributionDomainName,
       description: "CloudFront distribution URL",
     });
     new cdk.CfnOutput(this, "WebsiteBucketName", {

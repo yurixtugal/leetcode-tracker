@@ -7,6 +7,9 @@ node_modules
 .cdk.staging
 cdk.out
 
+# CDK outputs (contains sensitive info)
+outputs.json
+
 # Personal notes
 cdk.md
 dynamodb.md

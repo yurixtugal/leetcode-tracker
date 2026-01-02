@@ -3,7 +3,8 @@ import { UserPool } from "aws-cdk-lib/aws-cognito";
 import { TableV2 } from "aws-cdk-lib/aws-dynamodb";
 
 export interface AppStackProps extends StackProps {
-    environment: 'dev' | 'prod';
-    userPool?: UserPool;
-    tableDynamo?: TableV2;
+  environment: "dev" | "prod";
+  userPool?: UserPool;
+  tableDynamo?: TableV2;
+  cloudFrontUrl?: string;
 }

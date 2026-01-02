@@ -22,6 +22,14 @@ const databaseStack = new DatabaseStack(app, "DatabaseStack", {
   environment,
 });
 
+const frontendStack = new FrontendStack(app, "FrontendStack", {
+  env: {
+    account: process.env.CDK_DEFAULT_ACCOUNT,
+    region: process.env.CDK_DEFAULT_REGION,
+  },
+  environment,
+});
+
 const backendStack = new BackendStack(app, "BackendStack", {
   env: {
     account: process.env.CDK_DEFAULT_ACCOUNT,
@@ -30,12 +38,5 @@ const backendStack = new BackendStack(app, "BackendStack", {
   environment,
   userPool: authStack.userPool,
   tableDynamo: databaseStack.trackersTable,
+  cloudFrontUrl: frontendStack.distribution.distributionDomainName,
 });
-
-const frontendStack = new FrontendStack(app, "FrontendStack", {
-  env: {
-    account: process.env.CDK_DEFAULT_ACCOUNT,
-    region: process.env.CDK_DEFAULT_REGION,
-  },
-  environment,
-}); 

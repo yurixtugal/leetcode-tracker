@@ -102,6 +102,21 @@ export class BackendStack extends cdk.Stack {
         deployOptions: {
           stageName: props.environment,
         },
+        defaultCorsPreflightOptions: {
+          allowOrigins: [
+            ...(props.cloudFrontUrl ? [`https://${props.cloudFrontUrl}`] : []),
+            "http://localhost:5173", // Local development (Vite default port)
+          ],
+          allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+          allowHeaders: [
+            "Content-Type",
+            "Authorization",
+            "X-Amz-Date",
+            "X-Api-Key",
+            "X-Amz-Security-Token",
+          ],
+          allowCredentials: true,
+        },
       },
     );
 
