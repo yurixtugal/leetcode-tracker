@@ -18,6 +18,9 @@ export class BackendStack extends cdk.Stack {
       code: lambdaCode,
       functionName: `leetcode-tracker-create-${props.environment}`,
       timeout: cdk.Duration.seconds(10),
+      environment: {
+        TABLE_NAME: props.tableDynamo ? props.tableDynamo.tableName : "",
+      },
     });
 
     const listTrackersFn = new lambda.Function(this, "ListTrackersFunction", {
@@ -26,6 +29,9 @@ export class BackendStack extends cdk.Stack {
       code: lambdaCode,
       functionName: `leetcode-tracker-list-${props.environment}`,
       timeout: cdk.Duration.seconds(10),
+      environment: {
+        TABLE_NAME: props.tableDynamo ? props.tableDynamo.tableName : "",
+      },
     });
 
     const getTrackerFn = new lambda.Function(this, "GetTrackerFunction", {
@@ -34,6 +40,9 @@ export class BackendStack extends cdk.Stack {
       code: lambdaCode,
       functionName: `leetcode-tracker-get-${props.environment}`,
       timeout: cdk.Duration.seconds(10),
+      environment: {
+        TABLE_NAME: props.tableDynamo ? props.tableDynamo.tableName : "",
+      },
     });
 
     const updateTrackerFn = new lambda.Function(this, "UpdateTrackerFunction", {
@@ -42,6 +51,9 @@ export class BackendStack extends cdk.Stack {
       code: lambdaCode,
       functionName: `leetcode-tracker-update-${props.environment}`,
       timeout: cdk.Duration.seconds(10),
+      environment: {
+        TABLE_NAME: props.tableDynamo ? props.tableDynamo.tableName : "",
+      },
     });
 
     const deleteTrackerFn = new lambda.Function(this, "DeleteTrackerFunction", {
@@ -50,7 +62,20 @@ export class BackendStack extends cdk.Stack {
       code: lambdaCode,
       functionName: `leetcode-tracker-delete-${props.environment}`,
       timeout: cdk.Duration.seconds(10),
+      environment: {
+        TABLE_NAME: props.tableDynamo ? props.tableDynamo.tableName : "",
+      },
     });
+
+    // grant DynamoDB permissions to Lambda functions
+
+    if (props.tableDynamo) {
+      props.tableDynamo.grantReadWriteData(createTrackerFn);
+      props.tableDynamo.grantReadData(listTrackersFn);
+      props.tableDynamo.grantReadData(getTrackerFn);
+      props.tableDynamo.grantReadWriteData(updateTrackerFn);
+      props.tableDynamo.grantReadWriteData(deleteTrackerFn);
+    }
 
     // API Gateway REST API
     const api = new apigateway.RestApi(
