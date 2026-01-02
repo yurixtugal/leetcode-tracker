@@ -4,7 +4,8 @@ Frontend application for LeetCode Progress Tracker built with React, Vite, and T
 
 ## Status
 
-🚧 **Work in Progress** - Frontend not yet implemented. Currently showing Vite template.
+✅ **Infrastructure Deployed** - Frontend is deployed to S3 + CloudFront  
+🚧 **UI Work in Progress** - Currently showing Vite template
 
 ## Tech Stack
 
@@ -36,6 +37,39 @@ pnpm build
 # Preview production build
 pnpm preview
 ```
+
+## Deployment
+
+### Deployed Infrastructure
+
+- **S3 Bucket:** `leetcode-tracker-web-<env>`
+- **CloudFront Distribution:** Active
+- **CORS:** Configured on API Gateway for this CloudFront URL
+
+### Deploy Process
+
+```bash
+# 1. Build the frontend
+pnpm build
+
+# 2. Deploy with CDK (from infra directory)
+cd ../infra
+pnpm cdk deploy FrontendStack
+
+# Deployment automatically:
+# - Uploads dist/ to S3
+# - Invalidates CloudFront cache
+# - Updates within ~2 minutes
+```
+
+### Local Development vs Production
+
+| Environment | URL                   | API CORS   |
+| ----------- | --------------------- | ---------- |
+| Local       | http://localhost:5173 | ✅ Allowed |
+| Production  | CloudFront URL        | ✅ Allowed |
+
+Both environments can communicate with the backend API thanks to dynamic CORS configuration.
 
 ## Linting
 
@@ -117,12 +151,12 @@ Create a `.env.local` file in this directory:
 
 ```env
 # API Configuration
-VITE_API_URL=https://<api-id>.execute-api.us-east-1.amazonaws.com/dev/
+VITE_API_URL=https://<api-id>.execute-api.<region>.amazonaws.com/<stage>/
 
 # Cognito Configuration
 VITE_COGNITO_USER_POOL_ID=<region>_<pool-id>
 VITE_COGNITO_CLIENT_ID=<client-id>
-VITE_COGNITO_REGION=us-east-1
+VITE_COGNITO_REGION=<region>
 ```
 
 ## Dependencies to Install
@@ -231,17 +265,20 @@ Use these credentials for testing:
 - Dependencies are managed from the root level with pnpm workspaces
 - Shared types from `@leetcode-tracker/shared-types` are automatically available
 - Backend API requires authentication (JWT token in Authorization header)
+- Frontend is deployed to CloudFront with automatic cache invalidation
+- React Router is supported (404/403 errors redirect to index.html)
 
 ## Next Steps
 
-1. Install dependencies (Amplify, React Router, etc.)
-2. Configure Amplify with Cognito credentials
-3. Create authentication pages (Login/Signup)
-4. Build Dashboard with statistics
-5. Implement Tracker CRUD UI
-6. Add form validation with Zod schemas
-7. Style with Tailwind CSS
-8. Deploy to S3 + CloudFront
+1. ✅ ~~Deploy frontend infrastructure (S3 + CloudFront)~~
+2. ✅ ~~Configure CORS on API Gateway~~
+3. Install dependencies (Amplify, React Router, etc.)
+4. Configure Amplify with Cognito credentials
+5. Create authentication pages (Login/Signup)
+6. Build Dashboard with statistics
+7. Implement Tracker CRUD UI
+8. Add form validation with Zod schemas
+9. Style with Tailwind CSS
 
 ## Resources
 

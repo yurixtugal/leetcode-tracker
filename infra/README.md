@@ -25,7 +25,12 @@ This directory contains AWS CDK v2 code to deploy the complete serverless infras
 └──────────────────┘
 
 ┌──────────────────┐
-│  BackendStack    │ → API Gateway + 5 Lambda Functions
+│ FrontendStack    │ → S3 Bucket + CloudFront Distribution
+│                  │   (Static website hosting with OAC)
+└──────────────────┘
+
+┌──────────────────┐
+│  BackendStack    │ → API Gateway + 5 Lambda Functions + CORS
 │                  │   (NodejsFunction with esbuild bundling)
 └──────────────────┘
 ```
@@ -86,7 +91,49 @@ USER#<userId>      TRACK#<trackerId>           problem, difficulty, status, ...
 
 ---
 
-### 3. BackendStack
+### 3. FrontendStack
+
+**Purpose:** Static website hosting with S3 + CloudFront
+
+**Resources:**
+
+- S3 Bucket: `leetcode-tracker-web-{env}`
+- CloudFront Distribution with Origin Access Control (OAC)
+
+**Configuration:**
+
+- **S3 Bucket:**
+  - Website hosting enabled (`index.html` for SPA)
+  - Block all public access (CloudFront handles access via OAC)
+  - Auto-delete objects on stack deletion (dev only)
+  - RemovalPolicy: DESTROY (careful in prod!)
+
+- **CloudFront Distribution:**
+  - HTTPS redirect (ViewerProtocolPolicy.REDIRECT_TO_HTTPS)
+  - Price Class: PRICE_CLASS_100 (USA, Canada, Europe)
+  - Default root object: `index.html`
+  - Error responses: 404/403 → `/index.html` (React Router support)
+  - Origin Access Control (OAC) - more secure than OAI
+  - Cache policy: GET_HEAD_OPTIONS only
+
+- **Automatic Deployment:**
+  - Deploys `apps/web/dist` to S3 on every `cdk deploy`
+  - Invalidates CloudFront cache automatically (`/*`)
+
+**Exports:**
+
+- `distribution` - CloudFront distribution (passed to BackendStack for CORS)
+- `distributionDomainName` - CloudFront URL
+
+**Output:**
+
+```
+CloudFrontURL: <distribution-id>.cloudfront.net
+```
+
+---
+
+### 4. BackendStack
 
 **Purpose:** API + Lambda handlers
 
@@ -130,6 +177,25 @@ USER#<userId>      TRACK#<trackerId>           problem, difficulty, status, ...
 - `PUT /trackers/{id}` → UpdateTrackerFunction (Zod validation)
 - `DELETE /trackers/{id}` → DeleteTrackerFunction
 
+**CORS Configuration:**
+
+- Dynamic origin from FrontendStack CloudFront URL
+- Localhost support for development (`http://localhost:5173`)
+- Allowed methods: GET, POST, PUT, DELETE, OPTIONS
+- Allowed headers: Content-Type, Authorization, X-Amz-\*
+- Credentials: enabled (required for Cognito JWT)
+
+```typescript
+defaultCorsPreflightOptions: {
+  allowOrigins: [
+    `https://${props.cloudFrontUrl}`, // Dynamic from FrontendStack
+    'http://localhost:5173',          // Local development
+  ],
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowCredentials: true,
+}
+```
+
 ---
 
 ## Multi-Environment Support
@@ -139,6 +205,9 @@ All stacks use `AppStackProps` interface with type-safe environment:
 ```typescript
 interface AppStackProps extends StackProps {
   environment: "dev" | "prod";
+  userPool?: UserPool;
+  tableDynamo?: TableV2;
+  cloudFrontUrl?: string; // Dynamic from FrontendStack
 }
 ```
 
@@ -214,8 +283,12 @@ AuthStack (independent)
     ↓
 DatabaseStack (independent)
     ↓
-BackendStack (depends on AuthStack + DatabaseStack)
+FrontendStack (independent)
+    ↓ (provides cloudFrontUrl)
+BackendStack (depends on AuthStack + DatabaseStack + FrontendStack)
 ```
+
+**Important:** FrontendStack must be deployed before BackendStack because BackendStack uses the CloudFront URL for CORS configuration.
 
 CDK automatically handles deployment order based on dependencies.
 
@@ -236,8 +309,8 @@ After deployment, important values are exported:
 
 ```json
 {
-  "TrackersTableName": "leetcode-trackers-dev",
-  "TrackersTableArn": "arn:aws:dynamodb:us-east-1:..."
+  "TrackersTableName": "leetcode-trackers-<env>",
+  "TrackersTableArn": "arn:aws:dynamodb:<region>:<account-id>:table/leetcode-trackers-<env>"
 }
 ```
 
@@ -245,7 +318,16 @@ After deployment, important values are exported:
 
 ```json
 {
-  "ApiEndpoint": "https://<api-id>.execute-api.us-east-1.amazonaws.com/dev/"
+  "ApiEndpoint": "https://<api-id>.execute-api.<region>.amazonaws.com/<stage>/"
+}
+```
+
+### FrontendStack
+
+```json
+{
+  "CloudFrontURL": "<distribution-id>.cloudfront.net",
+  "WebsiteBucketName": "leetcode-tracker-web-<env>"
 }
 ```
 
@@ -257,9 +339,11 @@ After deployment, important values are exported:
 - **DynamoDB:** ~$0.25/month (on-demand, light usage)
 - **Lambda:** Free tier (1M requests/month)
 - **API Gateway:** Free tier (1M requests/month)
+- **CloudFront:** Free tier (1TB data transfer/month, 10M requests)
+- **S3:** ~$0.10/month (storage + requests)
 - **S3 (CDK Assets):** ~$0.10/month
 
-**Total Estimated Cost:** ~$0.35/month (within free tier limits)
+**Total Estimated Cost:** ~$0.45/month (within free tier limits)
 
 ### Production Environment (Moderate Usage)
 
@@ -267,6 +351,8 @@ After deployment, important values are exported:
 - DynamoDB: Pay per request (on-demand)
 - Lambda: $0.20 per 1M requests after free tier
 - API Gateway: $3.50 per 1M requests after free tier
+- CloudFront: $0.085 per GB after free tier
+- S3: $0.023 per GB storage + $0.005 per 1K requests
 
 ## Troubleshooting
 
@@ -316,6 +402,24 @@ cd ../../infra && npx cdk deploy BackendStack
 - More features available
 - Clearer documentation and examples
 
+### Why CloudFront + S3 instead of Amplify Hosting?
+
+- More control over caching and distribution
+- Better integration with CDK
+- Lower cost for static sites
+- Industry-standard architecture
+
+### Why Origin Access Control (OAC) instead of OAI?
+
+- OAC is the modern replacement for Origin Access Identity (OAI)
+- Better security model
+- Required for some S3 features
+- AWS recommends OAC for new distributions
+
+### Dynamic CORS Configuration
+
+The BackendStack receives the CloudFront URL from FrontendStack at synth time, ensuring CORS is always correctly configured for the deployed frontend. This eliminates hardcoded URLs and supports multi-environment deployments seamlessly.
+
 ## Security
 
 ### IAM Permissions
@@ -338,12 +442,14 @@ cd ../../infra && npx cdk deploy BackendStack
 
 ## Related Files
 
-- `bin/infra.ts` - CDK app entry point
+- `bin/infra.ts` - CDK app entry point (stack initialization order)
 - `lib/auth-stack.ts` - Cognito stack
 - `lib/database-stack.ts` - DynamoDB stack
-- `lib/backend-stack.ts` - API + Lambda stack
+- `lib/frontend-stack.ts` - S3 + CloudFront stack
+- `lib/backend-stack.ts` - API + Lambda stack + CORS
 - `lib/stack-props.ts` - Shared props interface
 - `cdk.json` - CDK configuration
+- `.gitignore` - Excludes `outputs.json` (sensitive data)
 
 ## Support
 

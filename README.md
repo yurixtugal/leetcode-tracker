@@ -17,7 +17,7 @@ Serverless system to track your LeetCode progress while practicing for technical
 ```
 leetcode-tracker/
 ├── apps/
-│   ├── web/              # React + Vite frontend (pending)
+│   ├── web/              # React + Vite frontend (deployed, UI pending)
 │   └── backend/          # Lambda handlers (TypeScript)
 │       └── src/handlers/
 │           ├── create-tracker.ts
@@ -30,7 +30,8 @@ leetcode-tracker/
 │   └── lib/
 │       ├── auth-stack.ts       # Cognito User Pool
 │       ├── database-stack.ts   # DynamoDB TableV2
-│       ├── backend-stack.ts    # API Gateway + Lambdas
+│       ├── backend-stack.ts    # API Gateway + Lambdas + CORS
+│       ├── frontend-stack.ts   # S3 + CloudFront (static hosting)
 │       └── stack-props.ts      # Shared props interface
 ├── packages/
 │   └── shared-types/     # Zod schemas + TypeScript types
@@ -135,7 +136,9 @@ Frontend with React + Vite. Dashboard to visualize progress, CRUD operations for
 
 **Stack:** React 19, Vite 7, TypeScript
 
-**Status:** 🚧 Pending implementation
+**Status:** 🚧 Infrastructure deployed, UI pending implementation
+
+**Deployed:** CloudFront (showing Vite template)
 
 **Scripts:**
 
@@ -151,7 +154,8 @@ Infrastructure as Code with AWS CDK v2.
 
 - `AuthStack` - Cognito User Pool + Client
 - `DatabaseStack` - DynamoDB TableV2 (single-table design)
-- `BackendStack` - API Gateway + 5 Lambda Functions (NodejsFunction with esbuild)
+- `BackendStack` - API Gateway + 5 Lambda Functions + CORS (NodejsFunction with esbuild)
+- `FrontendStack` - S3 Bucket + CloudFront Distribution (static website hosting)
 
 **Commands:**
 
@@ -208,10 +212,10 @@ npx cdk deploy BackendStack
 
 ```
 ┌─────────────────┐
-│   Frontend      │ (React + Vite - Pending)
-│   S3 + CF       │
+│   Frontend      │ (React + Vite)
+│   CloudFront    │
 └────────┬────────┘
-         │ HTTPS
+         │ HTTPS (CORS configured)
          ▼
 ┌─────────────────┐
 │  API Gateway    │ (REST API)
@@ -252,6 +256,8 @@ npx cdk deploy BackendStack
 - ✅ Lambda bundling with esbuild (optimized)
 - ✅ Single-table DynamoDB design
 - ✅ Structured error responses (400 for validation, 401 for auth)
+- ✅ Frontend infrastructure (S3 + CloudFront)
+- ✅ Dynamic CORS configuration (CloudFront + localhost)
 
 ### 🚧 In Progress (Frontend)
 
@@ -264,12 +270,13 @@ npx cdk deploy BackendStack
 ## Current Status
 
 **Backend:** 100% Complete ✅  
-**Frontend:** 0% Complete 🚧  
-**Infrastructure:** 100% Complete ✅
+**Frontend Infrastructure:** 100% Complete ✅  
+**Frontend UI:** 0% Complete 🚧  
+**Overall:** ~70% Complete
 
 ## API Endpoints
 
-Base URL: `https://<api-id>.execute-api.us-east-1.amazonaws.com/dev/`
+Base URL: `https://<api-id>.execute-api.<region>.amazonaws.com/<stage>/`
 
 All endpoints require `Authorization: Bearer <JWT_TOKEN>` header.
 
@@ -338,10 +345,10 @@ Set automatically by CDK:
 Create `.env.local` in `apps/web/`:
 
 ```env
-VITE_API_URL=https://<api-id>.execute-api.us-east-1.amazonaws.com/dev/
+VITE_API_URL=https://<api-id>.execute-api.<region>.amazonaws.com/<stage>/
 VITE_COGNITO_USER_POOL_ID=<region>_<pool-id>
 VITE_COGNITO_CLIENT_ID=<client-id>
-VITE_COGNITO_REGION=us-east-1
+VITE_COGNITO_REGION=<region>
 ```
 
 ## Testing
@@ -356,7 +363,7 @@ VITE_COGNITO_REGION=us-east-1
 ```bash
 aws cognito-idp initiate-auth \
   --auth-flow USER_PASSWORD_AUTH \
-  --client-id <client-id> \
+  --client-id <YOUR_CLIENT_ID> \
   --auth-parameters USERNAME=testuser@example.com,PASSWORD=TestPass123! \
   --query 'AuthenticationResult.IdToken' \
   --output text
@@ -368,20 +375,20 @@ aws cognito-idp initiate-auth \
 # Get token
 TOKEN=$(aws cognito-idp initiate-auth \
   --auth-flow USER_PASSWORD_AUTH \
-  --client-id <client-id> \
+  --client-id <YOUR_CLIENT_ID> \
   --auth-parameters USERNAME=testuser@example.com,PASSWORD=TestPass123! \
   --query 'AuthenticationResult.IdToken' \
   --output text)
 
 # Create tracker
-curl -X POST https://<api-id>.execute-api.us-east-1.amazonaws.com/dev/trackers \
+curl -X POST https://<api-id>.execute-api.<region>.amazonaws.com/<stage>/trackers \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"problem":"Two Sum","difficulty":"Easy","status":"Solved"}'
 
 # List trackers
 curl -H "Authorization: Bearer $TOKEN" \
-  https://<api-id>.execute-api.us-east-1.amazonaws.com/dev/trackers
+  https://<api-id>.execute-api.<region>.amazonaws.com/<stage>/trackers
 ```
 
 ## AWS Resources
@@ -389,17 +396,19 @@ curl -H "Authorization: Bearer $TOKEN" \
 ### Deployed Resources
 
 - **Region:** us-east-1
-- **Account:** <account-id>
-- **User Pool:** `leetcode-tracker-users-dev` (<region>_<pool-id>)
+- **User Pool:** `leetcode-tracker-users-dev`
 - **DynamoDB Table:** `leetcode-trackers-dev`
-- **API Gateway:** <api-id>
+- **API Gateway:** REST API
 - **Lambda Functions:** 5 (create, list, get, update, delete)
+- **CloudFront Distribution:** Active
+- **S3 Bucket:** leetcode-tracker-web-dev
 
 ### CloudFormation Stacks
 
 - `AuthStack` - Cognito resources
 - `DatabaseStack` - DynamoDB table
-- `BackendStack` - API Gateway + Lambdas
+- `BackendStack` - API Gateway + Lambdas + CORS
+- `FrontendStack` - S3 + CloudFront distribution
 
 ## Contributing
 
