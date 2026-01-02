@@ -356,7 +356,7 @@ VITE_COGNITO_REGION=<region>
 ### Test User Credentials
 
 - Email: `testuser@example.com`
-- Password: `TestPass123!`
+- Password: `<USE_YOUR_TEST_PASSWORD>`
 
 ### Login with AWS CLI
 
@@ -364,7 +364,7 @@ VITE_COGNITO_REGION=<region>
 aws cognito-idp initiate-auth \
   --auth-flow USER_PASSWORD_AUTH \
   --client-id <YOUR_CLIENT_ID> \
-  --auth-parameters USERNAME=testuser@example.com,PASSWORD=TestPass123! \
+  --auth-parameters USERNAME=testuser@example.com,PASSWORD=<YOUR_PASSWORD> \
   --query 'AuthenticationResult.IdToken' \
   --output text
 ```
@@ -376,7 +376,7 @@ aws cognito-idp initiate-auth \
 TOKEN=$(aws cognito-idp initiate-auth \
   --auth-flow USER_PASSWORD_AUTH \
   --client-id <YOUR_CLIENT_ID> \
-  --auth-parameters USERNAME=testuser@example.com,PASSWORD=TestPass123! \
+  --auth-parameters USERNAME=testuser@example.com,PASSWORD=<YOUR_PASSWORD> \
   --query 'AuthenticationResult.IdToken' \
   --output text)
 

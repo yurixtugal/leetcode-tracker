@@ -257,7 +257,7 @@ const form = useForm({
 Use these credentials for testing:
 
 - **Email:** testuser@example.com
-- **Password:** TestPass123!
+- **Password:** `<USE_YOUR_TEST_PASSWORD>`
 
 ## Notes
 

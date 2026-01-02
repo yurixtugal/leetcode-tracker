@@ -38,4 +38,5 @@ yarn-error.log*
 *.pem
 project.md
 yuri.md
-RESUMEN.md
+RESUMEN.mdinfra/outputs.json
+yuri.md
