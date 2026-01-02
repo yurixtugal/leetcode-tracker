@@ -1,0 +1,51 @@
+# Cursor/Claude AI Rules - LeetCode Tracker
+
+## Project Context
+- **Name:** LeetCode Progress Tracker
+- **Type:** Serverless application
+- **Stack:** React 19 + AWS Lambda + CDK + DynamoDB + Cognito
+- **Monorepo:** Turborepo + pnpm workspaces
+
+## Quick Commands
+```bash
+pnpm install              # Install all dependencies
+pnpm dev                  # Start all dev servers
+pnpm build                # Build all workspaces
+cd infra && npx cdk deploy --all  # Deploy to AWS
+```
+
+## Workspaces
+1. `apps/backend` - Lambda handlers (TypeScript + Zod + DynamoDB)
+2. `apps/web` - React frontend (Vite + TypeScript) - **UI pending**
+3. `infra` - AWS CDK stacks (4 stacks: Auth, Database, Backend, Frontend)
+4. `packages/shared-types` - Zod schemas + TypeScript types
+
+## Code Standards
+- Use TypeScript strictly
+- Validate all inputs with Zod schemas
+- Follow single-table DynamoDB design
+- Use AWS SDK v3 (modular imports)
+- Prefer functional components (React)
+
+## Important Rules
+- **NEVER** commit credentials or `.env` files
+- **ALWAYS** validate request bodies with Zod before database operations
+- **ALWAYS** use `pnpm --filter <workspace>` for workspace commands
+- **ALWAYS** test CDK changes with `npx cdk diff` before deploying
+
+## Active Resources
+- **Region:** us-east-1
+- **Cognito:** leetcode-tracker-users-dev
+- **DynamoDB:** leetcode-trackers-dev
+- **Test User:** testuser@example.com (password in AWS Secrets Manager)
+
+## Current Status
+- Backend: 100% Complete ✅
+- Frontend Infrastructure: 100% Complete ✅
+- Frontend UI: 0% Complete 🚧
+
+## Next Tasks
+1. Implement Cognito authentication flow in React
+2. Build tracker dashboard
+3. Create forms with Zod validation
+4. Add filters and visualizations

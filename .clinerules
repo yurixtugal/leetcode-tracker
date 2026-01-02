@@ -1,0 +1,110 @@
+# Cline AI Rules - LeetCode Tracker
+
+## Project Overview
+**LeetCode Progress Tracker** - Serverless application to track coding interview practice.
+
+**Stack:**
+- Frontend: React 19 + Vite 7 + TypeScript
+- Backend: AWS Lambda (Node.js 20 + TypeScript)
+- Infrastructure: AWS CDK v2
+- Database: DynamoDB (single-table design)
+- Auth: AWS Cognito (JWT tokens)
+- Validation: Zod v3.23.8
+- Monorepo: Turborepo + pnpm 9.0.0
+
+## Workspaces
+1. `apps/backend` - 5 Lambda handlers (CRUD operations)
+2. `apps/web` - React frontend (UI pending)
+3. `infra` - 4 CDK stacks (Auth, Database, Backend, Frontend)
+4. `packages/shared-types` - Zod schemas + types
+
+## Common Commands
+```bash
+# Install dependencies
+pnpm install
+
+# Development
+pnpm dev                                    # All workspaces
+pnpm --filter @leetcode-tracker/web dev    # Frontend only
+pnpm --filter @leetcode-tracker/backend dev # Backend only
+
+# Build
+pnpm build                                  # All workspaces
+pnpm --filter @leetcode-tracker/web build  # Frontend only
+
+# AWS CDK
+cd infra
+npx cdk deploy --all       # Deploy everything
+npx cdk diff BackendStack  # Preview changes
+npx cdk destroy --all      # Teardown
+```
+
+## Code Standards
+- **TypeScript:** Strict mode enabled
+- **Validation:** Use Zod for all request/response validation
+- **Error Handling:** Return structured errors with status codes
+- **AWS SDK:** Use v3 with modular imports
+- **React:** Functional components only
+
+## Important Guidelines
+1. **NEVER** commit `.env` files or AWS credentials
+2. **ALWAYS** validate inputs with Zod before database operations
+3. **ALWAYS** use `pnpm --filter` for workspace-specific commands
+4. **ALWAYS** test CDK with `npx cdk diff` before deploying
+5. **NEVER** hardcode API URLs or credentials in code
+
+## API Endpoints
+**Base URL:** `https://<API_ID>.execute-api.us-east-1.amazonaws.com/<STAGE>/`
+
+All endpoints require: `Authorization: Bearer <JWT_TOKEN>`
+
+- POST /trackers - Create tracker
+- GET /trackers - List trackers
+- GET /trackers/{id} - Get tracker
+- PUT /trackers/{id} - Update tracker
+- DELETE /trackers/{id} - Delete tracker
+
+## Test Credentials
+- **User Pool:** leetcode-tracker-users-dev
+- **Test Email:** testuser@example.com
+- **Password:** (stored in AWS Secrets Manager)
+
+## Current Status
+✅ Backend: 100% Complete
+✅ Frontend Infrastructure: 100% Complete
+🚧 Frontend UI: 0% Complete
+
+## Next Tasks
+1. Implement Cognito auth flow in React
+2. Build dashboard with tracker list
+3. Create add/edit forms with Zod validation
+4. Add filters (difficulty, status)
+5. Create progress visualizations
+
+## Troubleshooting
+```bash
+# View Lambda logs
+aws logs tail /aws/lambda/<function-name> --follow
+
+# Check CloudFormation stack
+aws cloudformation describe-stacks --stack-name BackendStack
+
+# Test Cognito auth
+aws cognito-idp initiate-auth \
+  --auth-flow USER_PASSWORD_AUTH \
+  --client-id <CLIENT_ID> \
+  --auth-parameters USERNAME=testuser@example.com,PASSWORD=<PASSWORD>
+```
+
+## Architecture
+```
+CloudFront (React) → API Gateway (JWT Auth) → Lambda (Zod validation) → DynamoDB
+                     ↑
+                 Cognito
+```
+
+## Key Files
+- `apps/backend/src/handlers/*.ts` - Lambda functions
+- `infra/lib/*-stack.ts` - CDK infrastructure
+- `packages/shared-types/src/*.ts` - Zod schemas
+- `apps/web/src/App.tsx` - React entry point (pending UI)
