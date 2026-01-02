@@ -9,7 +9,8 @@ cdk.out
 
 # Personal notes
 cdk.md
-
+dynamodb.md
+RESUMEN.md
 # AWS CLI installer (if accidentally downloaded)
 aws/
 awscliv2.zip

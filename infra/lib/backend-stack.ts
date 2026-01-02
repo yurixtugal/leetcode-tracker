@@ -1,74 +1,89 @@
 import * as cdk from "aws-cdk-lib";
-import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import { Construct } from "constructs";
 import { AppStackProps } from "./stack-props";
+import { NodejsFunction, OutputFormat } from "aws-cdk-lib/aws-lambda-nodejs";
+import * as path from "path";
 
 export class BackendStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: AppStackProps) {
     super(scope, id, props);
 
-    // Lambda code asset (shared by all functions)
-    const lambdaCode = lambda.Code.fromAsset("../apps/backend/dist");
+    const lambdaEnvironment = {
+      TABLE_NAME: props.tableDynamo ? props.tableDynamo.tableName : "",
+    };
 
-    // Lambda Functions
-    const createTrackerFn = new lambda.Function(this, "CreateTrackerFunction", {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      handler: "handlers/create-tracker.createTrackerHandler",
-      code: lambdaCode,
+    const bundlingOptions = {
+      minify: true,
+      sourceMap: true,
+      target: "es2020",
+      format: OutputFormat.CJS,
+      mainFields: ["module", "main"],
+      externalModules: ["aws-sdk"], // AWS SDK v2 is already in Lambda runtime
+    };
+
+    // Lambda Functions with NodejsFunction (auto-bundles with esbuild)
+    const createTrackerFn = new NodejsFunction(this, "CreateTrackerFunction", {
       functionName: `leetcode-tracker-create-${props.environment}`,
+      entry: path.join(
+        __dirname,
+        "../../apps/backend/src/handlers/create-tracker.ts",
+      ),
+      handler: "createTrackerHandler",
       timeout: cdk.Duration.seconds(10),
-      environment: {
-        TABLE_NAME: props.tableDynamo ? props.tableDynamo.tableName : "",
-      },
+      environment: lambdaEnvironment,
+      bundling: bundlingOptions,
     });
 
-    const listTrackersFn = new lambda.Function(this, "ListTrackersFunction", {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      handler: "handlers/list-trackers.listTrackersHandler",
-      code: lambdaCode,
+    const listTrackersFn = new NodejsFunction(this, "ListTrackersFunction", {
       functionName: `leetcode-tracker-list-${props.environment}`,
+      entry: path.join(
+        __dirname,
+        "../../apps/backend/src/handlers/list-trackers.ts",
+      ),
+      handler: "listTrackersHandler",
       timeout: cdk.Duration.seconds(10),
-      environment: {
-        TABLE_NAME: props.tableDynamo ? props.tableDynamo.tableName : "",
-      },
+      environment: lambdaEnvironment,
+      bundling: bundlingOptions,
     });
 
-    const getTrackerFn = new lambda.Function(this, "GetTrackerFunction", {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      handler: "handlers/get-tracker.getTrackerHandler",
-      code: lambdaCode,
+    const getTrackerFn = new NodejsFunction(this, "GetTrackerFunction", {
       functionName: `leetcode-tracker-get-${props.environment}`,
+      entry: path.join(
+        __dirname,
+        "../../apps/backend/src/handlers/get-tracker.ts",
+      ),
+      handler: "getTrackerHandler",
       timeout: cdk.Duration.seconds(10),
-      environment: {
-        TABLE_NAME: props.tableDynamo ? props.tableDynamo.tableName : "",
-      },
+      environment: lambdaEnvironment,
+      bundling: bundlingOptions,
     });
 
-    const updateTrackerFn = new lambda.Function(this, "UpdateTrackerFunction", {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      handler: "handlers/update-tracker.updateTrackerHandler",
-      code: lambdaCode,
+    const updateTrackerFn = new NodejsFunction(this, "UpdateTrackerFunction", {
       functionName: `leetcode-tracker-update-${props.environment}`,
+      entry: path.join(
+        __dirname,
+        "../../apps/backend/src/handlers/update-tracker.ts",
+      ),
+      handler: "updateTrackerHandler",
       timeout: cdk.Duration.seconds(10),
-      environment: {
-        TABLE_NAME: props.tableDynamo ? props.tableDynamo.tableName : "",
-      },
+      environment: lambdaEnvironment,
+      bundling: bundlingOptions,
     });
 
-    const deleteTrackerFn = new lambda.Function(this, "DeleteTrackerFunction", {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      handler: "handlers/delete-tracker.deleteTrackerHandler",
-      code: lambdaCode,
+    const deleteTrackerFn = new NodejsFunction(this, "DeleteTrackerFunction", {
       functionName: `leetcode-tracker-delete-${props.environment}`,
+      entry: path.join(
+        __dirname,
+        "../../apps/backend/src/handlers/delete-tracker.ts",
+      ),
+      handler: "deleteTrackerHandler",
       timeout: cdk.Duration.seconds(10),
-      environment: {
-        TABLE_NAME: props.tableDynamo ? props.tableDynamo.tableName : "",
-      },
+      environment: lambdaEnvironment,
+      bundling: bundlingOptions,
     });
 
     // grant DynamoDB permissions to Lambda functions
-
     if (props.tableDynamo) {
       props.tableDynamo.grantReadWriteData(createTrackerFn);
       props.tableDynamo.grantReadData(listTrackersFn);
