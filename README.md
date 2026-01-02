@@ -15,7 +15,7 @@ Serverless system to track your LeetCode progress while practicing for technical
 ## Project Structure
 
 ```
-tracker-gym/
+leetcode-tracker/
 ├── apps/
 │   ├── web/              # React + Vite frontend (pending)
 │   └── backend/          # Lambda handlers (TypeScript)
@@ -54,7 +54,7 @@ tracker-gym/
 ```bash
 # Clone repository
 git clone git@github.com:yurixtugal/leetcode-tracker.git
-cd tracker-gym
+cd leetcode-tracker
 
 # Install all dependencies
 pnpm install
