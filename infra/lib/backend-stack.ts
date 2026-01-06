@@ -1,5 +1,6 @@
 import * as cdk from "aws-cdk-lib";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
+import * as iam from "aws-cdk-lib/aws-iam";
 import { Construct } from "constructs";
 import { AppStackProps } from "./stack-props";
 import { NodejsFunction, OutputFormat } from "aws-cdk-lib/aws-lambda-nodejs";
@@ -83,6 +84,22 @@ export class BackendStack extends cdk.Stack {
       bundling: bundlingOptions,
     });
 
+    const suggestionTrackerFn = new NodejsFunction(
+      this,
+      "SuggestionTrackerFunction",
+      {
+        functionName: `leetcode-tracker-suggestion-${props.environment}`,
+        entry: path.join(
+          __dirname,
+          "../../apps/backend/src/handlers/get-suggestion-tracker.ts",
+        ),
+        handler: "getSuggestionTrackerHandler",
+        timeout: cdk.Duration.seconds(30),
+        environment: lambdaEnvironment,
+        bundling: bundlingOptions,
+      },
+    );
+
     // grant DynamoDB permissions to Lambda functions
     if (props.tableDynamo) {
       props.tableDynamo.grantReadWriteData(createTrackerFn);
@@ -90,7 +107,25 @@ export class BackendStack extends cdk.Stack {
       props.tableDynamo.grantReadData(getTrackerFn);
       props.tableDynamo.grantReadWriteData(updateTrackerFn);
       props.tableDynamo.grantReadWriteData(deleteTrackerFn);
+      props.tableDynamo.grantReadData(suggestionTrackerFn);
     }
+
+    // Grant Bedrock permissions to suggestion Lambda
+    suggestionTrackerFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: [
+          "bedrock:InvokeModel",
+          "bedrock:InvokeModelWithResponseStream",
+        ],
+        resources: [
+          // Allow access to Claude models (Anthropic)
+          `arn:aws:bedrock:${this.region}::foundation-model/anthropic.claude-*`,
+          // Allow access to other models if needed in the future
+          `arn:aws:bedrock:${this.region}::foundation-model/*`,
+        ],
+      }),
+    );
 
     // API Gateway REST API
     const api = new apigateway.RestApi(
@@ -180,6 +215,16 @@ export class BackendStack extends cdk.Stack {
     tracker.addMethod(
       "DELETE",
       new apigateway.LambdaIntegration(deleteTrackerFn),
+      {
+        authorizer: auth,
+        authorizationType: apigateway.AuthorizationType.COGNITO,
+      },
+    );
+    // GET /trackers/{id}/suggestion - Get suggestions for a specific tracker
+    const suggestion = tracker.addResource("suggestion");
+    suggestion.addMethod(
+      "GET",
+      new apigateway.LambdaIntegration(suggestionTrackerFn),
       {
         authorizer: auth,
         authorizationType: apigateway.AuthorizationType.COGNITO,

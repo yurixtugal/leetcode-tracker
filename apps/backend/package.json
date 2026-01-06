@@ -17,6 +17,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.962.0",
     "@aws-sdk/client-dynamodb": "^3.958.0",
     "@aws-sdk/lib-dynamodb": "^3.958.0",
     "@leetcode-tracker/shared-types": "workspace:*",
